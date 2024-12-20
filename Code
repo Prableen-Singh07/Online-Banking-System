@@ -1,0 +1,227 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+struct account {
+    char phone[50];
+    char account_number[50];
+    char password[50];
+    float balance;
+};
+
+void register_account();
+void login_account();
+void perform_transactions(struct account *current_account);
+void balance_inquiry(struct account *current_account);
+void deposit_cash(struct account *current_account);
+void withdraw_cash(struct account *current_account);
+void online_transfer(struct account *current_account);
+void change_password(struct account *current_account);
+
+int main() {
+    int option;
+
+    printf("\nWhat do you want to do?");
+    printf("\n\n1. Register an account");
+    printf("\n2. Login to an account");
+
+    printf("\n\nYour choice:\t");
+    scanf("%d", &option);
+
+    switch (option) {
+        case 1:
+            register_account();
+            break;
+        case 2:
+            login_account();
+            break;
+        default:
+            printf("\nInvalid option");
+    }
+
+    return 0;
+}
+
+void register_account() {
+    struct account new_account;
+    FILE *file_ptr;
+    char filename[50];
+
+    system("clear");
+    printf("Enter your account number:\t");
+    scanf("%s", new_account.account_number);
+    printf("Enter your phone number:\t");
+    scanf("%s", new_account.phone);
+    printf("Enter your new password:\t");
+    scanf("%s", new_account.password);
+    new_account.balance = 0;
+    strcpy(filename, new_account.phone);
+    file_ptr = fopen(strcat(filename, ".dat"), "w");
+    fwrite(&new_account, sizeof(struct account), 1, file_ptr);
+    if (fwrite != 0) {
+        printf("\n\nAccount successfully registered");
+    } else {
+        printf("\n\nSomething went wrong, please try again");
+    }
+    fclose(file_ptr);
+}
+
+void login_account() {
+    struct account current_account;
+    FILE *file_ptr;
+    char filename[50], phone[50], password[50];
+
+    system("clear");
+    printf("\nPhone number:\t");
+    scanf("%s", phone);
+    printf("Password:\t");
+    scanf("%s", password);
+    strcpy(filename, phone);
+    file_ptr = fopen(strcat(filename, ".dat"), "r");
+    if (file_ptr == NULL) {
+        printf("\nAccount number not registered");
+        return;
+    }
+
+    fread(&current_account, sizeof(struct account), 1, file_ptr);
+    fclose(file_ptr);
+
+    if (!strcmp(password, current_account.password)) {
+        printf("\n\t\tWelcome %s", current_account.phone);
+        perform_transactions(&current_account);
+    } else {
+        printf("\nInvalid password");
+    }
+}
+
+void perform_transactions(struct account *current_account) {
+    int choice;
+    char continue_transaction = 'y';
+
+    while (continue_transaction == 'y') {
+        system("clear");
+        printf("\n\nPress 1 for balance inquiry");
+        printf("\nPress 2 for depositing cash");
+        printf("\nPress 3 for cash withdrawal");
+        printf("\nPress 4 for online transfer");
+        printf("\nPress 5 for password change");
+        printf("\n\nYour choice:\t");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                balance_inquiry(current_account);
+                break;
+            case 2:
+                deposit_cash(current_account);
+                break;
+            case 3:
+                withdraw_cash(current_account);
+                break;
+            case 4:
+                online_transfer(current_account);
+                break;
+            case 5:
+                change_password(current_account);
+                break;
+            default:
+                printf("\nInvalid option");
+        }
+
+        printf("\nDo you want to continue the transaction [y/n]\t");
+        scanf(" %c", &continue_transaction);
+    }
+}
+
+void balance_inquiry(struct account *current_account) {
+    printf("\nYour current balance is Rs.%.2f", current_account->balance);
+}
+
+void deposit_cash(struct account *current_account) {
+    float amount;
+    FILE *file_ptr;
+    char filename[50];
+
+    printf("\nEnter the amount:\t");
+    scanf("%f", &amount);
+    current_account->balance += amount;
+    strcpy(filename, current_account->phone);
+    file_ptr = fopen(strcat(filename, ".dat"), "w");
+    fwrite(current_account, sizeof(struct account), 1, file_ptr);
+    if (fwrite != NULL) printf("\nSuccessfully deposited.");
+    fclose(file_ptr);
+}
+
+void withdraw_cash(struct account *current_account) {
+    float amount;
+    FILE *file_ptr;
+    char filename[50];
+
+    printf("\nEnter the amount:\t");
+    scanf("%f", &amount);
+    if (amount > current_account->balance) {
+        printf("\nInsufficient balance");
+        return;
+    }
+    current_account->balance -= amount;
+    strcpy(filename, current_account->phone);
+    file_ptr = fopen(strcat(filename, ".dat"), "w");
+    fwrite(current_account, sizeof(struct account), 1, file_ptr);
+    if (fwrite != NULL) printf("\nYou have withdrawn Rs.%.2f", amount);
+    fclose(file_ptr);
+}
+
+void online_transfer(struct account *current_account) {
+    struct account transfer_account;
+    FILE *file_ptr;
+    char filename[50], phone[50];
+    float amount;
+
+    printf("\nPlease enter the phone number to transfer the balance:\t");
+    scanf("%s", phone);
+    printf("\nPlease enter the amount to transfer:\t");
+    scanf("%f", &amount);
+    strcpy(filename, phone);
+    file_ptr = fopen(strcat(filename, ".dat"), "r");
+    if (file_ptr == NULL) {
+        printf("\nAccount number not registered");
+        return;
+    }
+
+    fread(&transfer_account, sizeof(struct account), 1, file_ptr);
+    fclose(file_ptr);
+
+    if (amount > current_account->balance) {
+        printf("\nInsufficient balance");
+        return;
+    }
+
+    transfer_account.balance += amount;
+    file_ptr = fopen(filename, "w");
+    fwrite(&transfer_account, sizeof(struct account), 1, file_ptr);
+    fclose(file_ptr);
+
+    if (fwrite != NULL) {
+        printf("\nYou have successfully transferred Rs.%.2f to %s", amount, phone);
+        strcpy(filename, current_account->phone);
+        file_ptr = fopen(strcat(filename, ".dat"), "w");
+        current_account->balance -= amount;
+        fwrite(current_account, sizeof(struct account), 1, file_ptr);
+        fclose(file_ptr);
+    }
+}
+
+void change_password(struct account *current_account) {
+    char new_password[50];
+    FILE *file_ptr;
+    char filename[50];
+
+    printf("\nPlease enter your new password:\t");
+    scanf("%s", new_password);
+    strcpy(current_account->password, new_password);
+    strcpy(filename, current_account->phone);
+    file_ptr = fopen(strcat(filename, ".dat"), "w");
+    fwrite(current_account, sizeof(struct account), 1, file_ptr);
+    if (fwrite != NULL) printf("\nPassword successfully changed");
+    fclose(file_ptr);
+}
